@@ -229,6 +229,7 @@ def edit_profile():
             user.header_image_url = form.header_image_url.data
             user.bio = form.bio.data
             db.session.commit()
+            flash('You have successfully edited your profile', 'success')
             return redirect(f'/users/{user.id}')
         flash('Incorrect password. Try again', 'danger')
 
@@ -314,8 +315,10 @@ def homepage():
     """
 
     if g.user:
+        users_following = [following.id for following in g.user.following] + [g.user.id]
+
         messages = (Message
-                    .query
+                    .query.filter(Message.user_id.in_(users_following))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
