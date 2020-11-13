@@ -153,7 +153,8 @@ def users_show(user_id):
                 .order_by(Message.timestamp.desc())
                 .limit(100)
                 .all())
-    return render_template('users/show.html', user=user, messages=messages)
+    liked = [msg.id for msg in user.likes ]
+    return render_template('users/show.html', user=user, messages=messages, likes=liked)
 
 
 @app.route('/users/<int:user_id>/following')
@@ -235,7 +236,14 @@ def edit_profile():
 
     return render_template('users/edit.html', form=form)
         
-
+@app.route('/users/<int:user_id>/likes')
+def user_likes(user_id):
+    user = User.query.get_or_404(user_id)
+    if not g.user:
+        flash(f"You need to be logged in to view {user.name}'s likes", 'danger')
+    return render_template('/users/likes.html', user=user)
+    
+    
 
 @app.route('/users/delete', methods=["POST"])
 def delete_user():
@@ -301,6 +309,21 @@ def messages_destroy(message_id):
 
     return redirect(f"/users/{g.user.id}")
 
+@app.route('/users/add_like/<int:message_id>', methods=['POST'])
+def like_message(message_id):
+    if not g.user:
+        flash("You can't do that!", 'danger')
+        return redirect('/')
+    message_like = Message.query.get_or_404(message_id)
+    if message_like.user_id == g.user.id:
+        flash("You can't like your own post!", 'danger')
+        return redirect('/')
+    if message_like in g.user.likes:
+        g.user.likes = [like for like in g.user.likes if like != message_like]
+    else:
+        g.user.likes.append(message_like)
+    db.session.commit()
+    return redirect(request.referrer)
 
 ##############################################################################
 # Homepage and error pages
