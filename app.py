@@ -204,7 +204,7 @@ def stop_following(follow_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    followed_user = User.query.get(follow_id)
+    followed_user = User.query.get_or_404(follow_id)
     g.user.following.remove(followed_user)
     db.session.commit()
 
@@ -215,7 +215,7 @@ def stop_following(follow_id):
 def edit_profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
+
     if not g.user:
         flash("You can't edit this profile!", "danger")
         return redirect('/')
@@ -291,7 +291,7 @@ def messages_add():
 def messages_show(message_id):
     """Show a message."""
 
-    msg = Message.query.get(message_id)
+    msg = Message.query.get_or_404(message_id)
     return render_template('messages/show.html', message=msg)
 
 
@@ -303,7 +303,7 @@ def messages_destroy(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get(message_id)
+    msg = Message.query.get_or_404(message_id)
     db.session.delete(msg)
     db.session.commit()
 
@@ -324,6 +324,13 @@ def like_message(message_id):
         g.user.likes.append(message_like)
     db.session.commit()
     return redirect(request.referrer)
+
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Custom 404 Error page"""
+    return render_template('404.html'), 404
 
 ##############################################################################
 # Homepage and error pages
