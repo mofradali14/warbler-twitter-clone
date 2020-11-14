@@ -34,12 +34,33 @@ class UserModelTestCase(TestCase):
 
     def setUp(self):
         """Create test client, add sample data."""
+        db.drop_all()
+        db.create_all()
 
-        User.query.delete()
-        Message.query.delete()
-        Follows.query.delete()
+        user_1 = User.signup("tester1", "number1@gmail.com", "iamapassword", None)
+        user_id_1 = 1111
+        user_1.id = user_id_1
+
+        user_2 = User.signup("tester2", "number2@gmail.com", "iamapassword", None)
+        user_id_2 = 2222
+        user_2.id = user_id_2
+
+        db.session.commit()
+
+        user_1 = User.query.get(user_id_1)
+        user_2 = User.query.get(user_id_2)
+
+        self.user_1 = user_1
+        self.user_id_1 = user_id_1
+
+        self.user_2 = user_2
+        self.user_id_2 = user_id_2
 
         self.client = app.test_client()
+
+    def tearDown(self):
+        db.session.rollback()
+        return super().tearDown()
 
     def test_user_model(self):
         """Does basic model work?"""
@@ -56,3 +77,44 @@ class UserModelTestCase(TestCase):
         # User should have no messages & no followers
         self.assertEqual(len(u.messages), 0)
         self.assertEqual(len(u.followers), 0)
+
+    def test_following(self):
+        self.user_1.following.append(self.user_2)
+        db.session.commit()
+
+        self.assertEqual(len(self.user_1.followers), 0)
+        self.assertEqual(len(self.user_2.followers),1)
+        self.assertEqual(len(self.user_1.following), 1)
+        self.assertEqual(len(self.user_2.following), 0)
+        
+        self.assertEqual(self.user_1.following[0], self.user_2)
+        self.assertEqual(self.user_2.followers[0], self.user_1)
+
+    def test_is_followed_by(self):
+        self.user_1.following.append(self.user_2)
+        db.session.commit()
+
+        self.assertEqual(self.user_1.is_followed_by(self.user_2), False)
+        self.assertEqual(self.user_2.is_followed_by(self.user_1), True)
+
+    def test_is_following(self):
+        self.user_1.following.append(self.user_2)
+        db.session.commit()
+
+        self.assertEqual(self.user_1.is_following(self.user_2), True)
+        self.assertEqual(self.user_2.is_following(self.user_1), False)
+
+    def test_user_signup(self):
+        user = User.signup('tester', 'tester@gmail.com', 'iamapassword', None)
+        user.id = 1414
+        db.session.commit()
+
+        user = User.query.get(1414)
+
+        self.assertEqual(user.username, 'tester')
+        self.assertEqual(user.id, 1414)
+        self.assertEqual(user.email, 'tester@gmail.com')
+        self.assertEqual(user.image_url, "/static/images/default-pic.png")
+        self.assertEqual(user.bio, None)
+        self.assertEqual(user.location, None)
+        self.assertEqual(user.header_image_url, "/static/images/warbler-hero.jpg")

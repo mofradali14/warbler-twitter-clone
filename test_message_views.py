@@ -44,9 +44,9 @@ class MessageViewTestCase(TestCase):
 
         self.client = app.test_client()
 
-        self.testuser = User.signup(username="testuser",
-                                    email="test@test.com",
-                                    password="testuser",
+        self.testuser = User.signup(username="tester",
+                                    email="test@gmail.com",
+                                    password="iamapassword",
                                     image_url=None)
         self.testuser_id = 1414
         self.testuser.id = self.testuser_id
@@ -125,7 +125,7 @@ class MessageViewTestCase(TestCase):
 
         m = Message(
             id=1234,
-            text="a test message",
+            text="testing",
             user_id=self.testuser_id
         )
         db.session.add(m)
