@@ -7,6 +7,7 @@
 
 import os
 from unittest import TestCase
+from sqlalchemy import exc
 
 from models import db, User, Message, Follows
 
@@ -118,3 +119,35 @@ class UserModelTestCase(TestCase):
         self.assertEqual(user.bio, None)
         self.assertEqual(user.location, None)
         self.assertEqual(user.header_image_url, "/static/images/warbler-hero.jpg")
+
+    def test_bad_user(self):
+        bad_user = User.signup(None, "tester@gmail.com", "thisisapassword", None)
+        uid = 9999999
+        bad_user.id = uid
+        with self.assertRaises(exc.IntegrityError) as context:
+            db.session.commit()
+
+    def test_bad_email(self):
+        bad_email = User.signup("test", None, "thisisapassword", None)
+        uid = 23479287
+        bad_email.id = uid
+        with self.assertRaises(exc.IntegrityError) as context:
+            db.session.commit()
+    
+    def test_bad_password(self):
+        with self.assertRaises(ValueError) as context:
+            User.signup("tester", "test@gmail.com", None, None)
+        with self.assertRaises(ValueError) as context:
+            User.signup("tester", "test@gmail.com", "", None)
+
+    
+    def test_authentication(self):
+        user = User.authenticate(self.user_1.username, "iamapassword")
+        self.assertIsNotNone(user)
+        self.assertEqual(user.id, self.user_id_1)
+            
+    def test_bad_user_authentication(self):
+        self.assertFalse(User.authenticate("badaccountuser", "iamapassword"))
+
+    def test_bad_password_authentication(self):
+        self.assertFalse(User.authenticate(self.user_1.username, "wrongpassword"))
